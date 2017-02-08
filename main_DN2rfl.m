@@ -1,5 +1,11 @@
+if ismac
+    drive = '/Volumes/SED/';
+elseif ispc
+    drive = 'F:/';
+end
+
 date_time = '2016_08_05_07_31_48';
-pdir = sprintf('/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/%s/',date_time);
+pdir = [drive sprintf('data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/%s/',date_time)];
 
 %%
 bname = 'raw';
@@ -34,6 +40,11 @@ set(hdt,'UpdateFcn',{@map_cursor_large,ax_spc,hdr,[pdir bname],1:hdr.bands});
 %--------------------------------------------------------------------------
 % read spectralon reflectance data calibrated by Labsphere.
 %--------------------------------------------------------------------------
+if ismac
+    pdir_labsphere = '/Users/yukiitoh/Box Sync/data/ancillary/labsphere/';
+elseif ispc
+    pdir_labsphere = 'C:/Users/yuki/Box Sync/data/ancillary/labsphere/';
+end
 pdir_labsphere = '/Users/yukiitoh/Box Sync/data/ancillary/labsphere/';
 
 white_rfl_fpath = [pdir_labsphere '99AA02-0316-4282_10in/SRT-99-100.txt'];
@@ -114,7 +125,7 @@ DN2rfl_ratioing_save_largeimage( hdr,[pdir bname],hdr_cr,imgDark,ave_rfrSpc,whit
 
 %%
 % check the image is correct
-bname_rfrr = 'raw_rfwr2';
+bname_rfrr = 'raw_rfwr';
 
 hdr_rfrr = envihdrread_yuki([pdir bname_rfrr '.hdr']);
 imgb = lazyEnviReadb([pdir bname_rfrr],hdr_rfrr, [125]);
@@ -126,7 +137,7 @@ imgRGB_rfrr_cr = imgRGB_rfrr;
 imgRGB_rfrr_cr(imgRGB_rfrr_cr<0) = 0;
 imgRGB_rfrr_cr(imgRGB_rfrr_cr>1) = 1;
 figure; ax_spc = subplot(1,1,1);
-figure; imagesc(double(imgRGB_rfrr));
+figure; imagesc(double(imgRGB_rfrr_cr));
 set(gca,'dataAspectRatio',[1 1 1]);
 hdt = datacursormode(gcf);
 % set(hdt.CurrentDataCursor, 'Marker','+', 'MarkerFaceColor','b');
