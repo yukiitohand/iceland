@@ -4,7 +4,7 @@ elseif ispc
     drive = 'F:/';
 end
 
-date_time = '2016_08_05_07_31_48';
+date_time = '2016_08_05_12_44_44';
 pdir = [drive sprintf('data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/%s/',date_time)];
 
 %%
@@ -16,7 +16,7 @@ imgRGB = lazyEnviReadRGB([pdir bname],hdr, [125 86 49]);
 imgRGB = double(imgRGB);
 
 % read dark image
-hdrDark = envihdrread_yuki([pdir 'darkReference.hdr']);
+hdrDark = envihdrreadx([pdir 'darkReference.hdr']);
 imgDark = envidataread([pdir 'darkReference'],hdrDark);
 
 % here we show how to preview the hyperspectral image and spectra in an way
@@ -45,7 +45,7 @@ if ismac
 elseif ispc
     pdir_labsphere = 'C:/Users/yuki/Box Sync/data/ancillary/labsphere/';
 end
-pdir_labsphere = '/Users/yukiitoh/Box Sync/data/ancillary/labsphere/';
+% pdir_labsphere = '/Users/yukiitoh/Box Sync/data/ancillary/labsphere/';
 
 white_rfl_fpath = [pdir_labsphere '99AA02-0316-4282_10in/SRT-99-100.txt'];
 [ white_rfl ] = spectralonRead( white_rfl_fpath );
@@ -72,11 +72,11 @@ fwhm = w*1; % fwhm for swir
 [ black_rfl_rsmp ] = interpGaussian( black_rfl(:,1),black_rfl(:,2),hdr.wavelength',fwhm );
 
 figure; 
-plot(white_rfl(:,1),white_rfl(:,2));
+% plot(white_rfl(:,1),white_rfl(:,2));
 hold on;
 plot(hdr.wavelength',white_rfl_rsmp,'r-');
-% plot(hdr.wavelength,gray_rfl_rsmp,'b-');
-% plot(hdr.wavelength,black_rfl_rsmp,'k-');
+plot(hdr.wavelength,gray_rfl_rsmp,'b-');
+plot(hdr.wavelength,black_rfl_rsmp,'k-');
 % 
 % figure; plot(white_rfl_rsmp./gray_rfl_rsmp);
 
@@ -85,10 +85,10 @@ plot(hdr.wavelength',white_rfl_rsmp,'r-');
 % roi_ul and roi_lr specify the upper left and lower right corners in the
 % region where reference panels are contained.
 %--------------------------------------------------------------------------
-roi_ul = [31 197]; roi_lr = [392 364];  
+roi_ul = [2650 200]; roi_lr = [2910 300];
 % roi_ul(1) = roi_ul(1)-6000; roi_lr(1) = roi_lr(1)-6000;
 %%
-yx_white = [329 269]; th_white = 150;
+yx_white = [2795 253]; th_white = 500;
 % yx_white(1) = yx_white(1)-6000;
 % [ white_im2, residual_map_white2 ] = get_rfrDNSpc_residualHardThresholding(img_roi,imgDark_roi,yx_white-roi_ul+1,th_white);
 [ ave_rfrSpc, residual_map ] = get_rfrDNSpc_residualHardThresholding_largeimage(hdr,[pdir bname],imgDark,roi_ul,roi_lr,yx_white,th_white);
@@ -125,7 +125,7 @@ DN2rfl_ratioing_save_largeimage( hdr,[pdir bname],hdr_cr,imgDark,ave_rfrSpc,whit
 
 %%
 % check the image is correct
-bname_rfrr = 'raw_rfwr';
+bname_rfrr = ['raw_rfwr2'];
 
 hdr_rfrr = envihdrread_yuki([pdir bname_rfrr '.hdr']);
 imgb = lazyEnviReadb([pdir bname_rfrr],hdr_rfrr, [125]);
@@ -142,18 +142,6 @@ set(gca,'dataAspectRatio',[1 1 1]);
 hdt = datacursormode(gcf);
 % set(hdt.CurrentDataCursor, 'Marker','+', 'MarkerFaceColor','b');
 % set(hdt,'UpdateFcn',{@map_cursor_default,ax_spc,img_corrd,1:hdr.bands});
-set(hdt,'UpdateFcn',{@map_cursor_large,ax_spc,hdr_rfrr,[pdir bname_rfrr],1:hdr_rfrr.bands});
+set(hdt,'UpdateFcn',{@map_cursor_large,ax_spc,hdr_rfrr,[pdir bname_rfrr],hdr_rfrr.wavelength});
 
 %%
-bname_rfwr = 'raw_rfwr3';
-
-hdr3 = envihdrread_yuki([pdir 'raw_rfwr3.hdr']);
-spc3 = lazyEnviRead([pdir 'raw_rfwr3'],hdr3,500,500);
-
-hdr2 = envihdrread_yuki([pdir 'raw_rfwr2.hdr']);
-spc2 = lazyEnviRead([pdir 'raw_rfwr2'],hdr2,500,500);
-
-hdr4 = envihdrread_yuki([pdir 'raw_rfwr4.hdr']);
-spc4 = lazyEnviRead([pdir 'raw_rfwr4'],hdr4,500,500);
-
-figure; plot([spc3 spc2 spc4]);
