@@ -1,8 +1,8 @@
-pdir = 'F:\MicroHyperspec\SWIR data\captured\2016_08_05_07_31_48\';
+pdir = '/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/2016_08_05_12_44_44/';
 
-hdr = envihdrread_yuki([pdir 'raw_rfwr.hdr']);
+hdr = envihdrread_yuki([pdir 'raw_rfwr2.hdr']);
 
-img = envidataread([pdir 'raw_rfwr'],hdr);
+img = envidataread([pdir 'raw_rfwr2'],hdr);
 
 imRGB = img(:,:,fliplr(hdr.default_bands));
 imRGB(imRGB>1) = 1;
@@ -21,3 +21,7 @@ set(gca,'dataAspectRatio',[1 1 1]);
 hdt = datacursormode(gcf);
 % set(hdt.CurrentDataCursor, 'Marker','+', 'MarkerFaceColor','b');
 set(hdt,'UpdateFcn',{@map_cursor_default,ax_spc,img,hdr.wavelength});
+
+
+noisyBands = [49:57 97:109 167:178];
+img(:,:,noisyBands) = nan;

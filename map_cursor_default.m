@@ -23,7 +23,7 @@ hold(ax_spc,'off');
 xlabel(ax_spc,'Wavelength');
 ylabel(ax_spc,'Reflectance');
 legend(ax_spc,{'Image spectrum'});
-ylim(ax_spc,[0 max(spc)*1.4]);
+ylim(ax_spc,[min(spc)*0.8 max(spc)*1.2]);
 
 
 end
