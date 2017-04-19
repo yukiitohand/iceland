@@ -1,6 +1,27 @@
 function [ data ] = spectralonRead( fpath )
-%UNTITLED5 Summary of this function goes here
-%   Detailed explanation goes here
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% [ data ] = spectralonRead( fpath )
+%   Read a text file storing calibrated reflectance of the spectralon
+%   manufactured by Labsphere
+%   Inputs
+%     fpath: path to the text file
+%   Outputs
+%     data: [L x 2], first column is the wavelength and the second is the
+%           refelectance
+%   ----------------
+%   The text file looks like
+%
+%   05AA010716	
+%   250	0.0371
+%   251	0.0372
+%   252	0.0370
+%   253	0.0368
+%   254	0.0368
+%   255	0.0368
+%       :
+%       :
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 fid = fopen(fpath,'r');
 data = [];
 flg = 1;
