@@ -41,9 +41,9 @@ set(hdt,'UpdateFcn',{@map_cursor_large,ax_spc,hdr,[pdir bname],1:hdr.bands});
 % read spectralon reflectance data calibrated by Labsphere.
 %--------------------------------------------------------------------------
 if ismac
-    pdir_labsphere = '/Users/yukiitoh/Box Sync/data/ancillary/labsphere/';
+    pdir_labsphere = '/Users/yukiitoh/Box Sync/data/labsphere/';
 elseif ispc
-    pdir_labsphere = 'C:/Users/yuki/Box Sync/data/ancillary/labsphere/';
+    pdir_labsphere = 'C:/Users/yuki/Box Sync/data/labsphere/';
 end
 % pdir_labsphere = '/Users/yukiitoh/Box Sync/data/ancillary/labsphere/';
 
@@ -67,9 +67,9 @@ fwhm = w*5; % full width half maximum (fwhm) for vnir
 fwhm = w*1; % fwhm for swir
 
 % interpolation
-[ white_rfl_rsmp ] = interpGaussian( white_rfl(:,1),white_rfl(:,2),hdr.wavelength',fwhm );
-[ gray_rfl_rsmp ] = interpGaussian( gray_rfl(:,1),gray_rfl(:,2),hdr.wavelength',fwhm );
-[ black_rfl_rsmp ] = interpGaussian( black_rfl(:,1),black_rfl(:,2),hdr.wavelength',fwhm );
+[ white_rfl_rsmp ] = interpGaussConv( white_rfl(:,1),white_rfl(:,2),hdr.wavelength',fwhm );
+[ gray_rfl_rsmp ] = interpGaussConv( gray_rfl(:,1),gray_rfl(:,2),hdr.wavelength',fwhm );
+[ black_rfl_rsmp ] = interpGaussConv( black_rfl(:,1),black_rfl(:,2),hdr.wavelength',fwhm );
 
 figure; 
 % plot(white_rfl(:,1),white_rfl(:,2));
