@@ -35,30 +35,40 @@ imgPath = joinPath(pdir,basename);
 hdrPath = joinPath(pdir,[basename,'.hdr']);
 hdr = envihdrreadx(hdrPath);
 
-img = envidataread(imgPath,hdr);
+img = lazyEnviReadRGB(imgPath,hdr,hdr.default_bands);
 img = permute(img,[2 1 3]);
 
 img = flip(img,1);
-R = img(:,:,hdr.default_bands(3)) / 7;
-G = img(:,:,hdr.default_bands(2)) / 13;
-B = img(:,:,hdr.default_bands(1)) /20;
+R = img(:,:,3) / 7;
+G = img(:,:,2) / 13;
+B = img(:,:,1) / 20;
 imRGB = cat(3, R,G,B);
 imRGB(imRGB<0) = 0;
+
+hdr_cor = hdr;
+hdr_cor.lines = hdr.samples;
+hdr_cor.samples = hdr.lines;
+hdr_cor = hdrupdate(hdr_cor,'RHO_COLLINEEXCHANGED',1,'RHO_COL_FLIPPED',1);
+
 
 % conversion
 switch meth
     case 1
         suffix = '_rfwr3';
         [BW_w,xi_w,yi_w] = extractPanel_man(pdir,imRGB,'white','OVERWRITE',paneloverwrite);
-        [white_rfl_rsmp,~,~] = loadPanelrfl(hdr);
-        [im_cor,hdr_cor] = whiteRatioing(hdr,img,BW_w,white_rfl_rsmp);
+        [white_rfl_rsmp,~,~] = loadPanelrfl(hdr_cor);
+        [im_cor] = whiteRatioing(hdr,imgPath,BW_w,white_rfl_rsmp);
+        hdr_cor = hdrupdate(hdr_cor,'RHO_METHOD','white_ratioing');
     case 2
-        suffix = '_rf3r1';
+        suffix = '_rfel1';
         [BW_w,xi_w,yi_w] = extractPanel_man(pdir,imRGB,'white','OVERWRITE',paneloverwrite);
         [BW_g,xi_g,yi_g] = extractPanel_man(pdir,imRGB,'gray','OVERWRITE',paneloverwrite);
         [BW_k,xi_k,yi_k] = extractPanel_man(pdir,imRGB,'black','OVERWRITE',paneloverwrite);
-        [white_rfl_rsmp,gray_rfl_rsmp,black_rfl_rsmp] = loadPanelrfl(hdr);
-        
+        [white_rfl_rsmp,gray_rfl_rsmp,black_rfl_rsmp] = loadPanelrfl(hdr_cor);
+        [im_cor,c] = empline(hdr,imgPath,BW_w,BW_g,BW_k,white_rfl_rsmp,gray_rfl_rsmp,black_rfl_rsmp);
+        ancillaryPath = joinPath(pdir,'ancillary_rfel1.mat');
+        save(ancillaryPath,'c');
+        hdr_cor = hdrupdate(hdr_cor,'RHO_METHOD','Empirical Line Method');
     otherwise
         error('The mode is not recognized');
 end
@@ -70,9 +80,9 @@ hdr_cor = hdrupdate(hdr_cor,'RHO_INITIAL',initial);
 basename_new = [basename suffix];
 
 imgPath_new = joinPath(pdir,basename_new);
-hdrPath_new = joinPath(pdir,[basename_new, 'hdr']);
+hdrPath_new = joinPath(pdir,[basename_new, '.hdr']);
 
-envidatawrite(img_cor,imgPath_new,hdr_cor);
+envidatawrite(im_cor,imgPath_new,hdr_cor);
 envihdrwritex(hdr_cor,hdrPath_new);
 
 hsi = [];
@@ -111,39 +121,54 @@ else
     end
 end
 
-fpathMaskdata = joinPath(pdir,sprintf('panel_mask_%s.mat','color'));
+fpathMaskdata = joinPath(pdir,sprintf('panel_mask_%s.mat',color));
 cache_exist = exist(fpathMaskdata,'file');
 if cache_exist && ~overwrite
     load(fpathMaskdata);
 else
-    fig = figure; imagesc(imRGB);
-    set(gca,'dataAspectRatio',[1 1 1]);
-    title(sprintf('Focus, pan, and locate the %s panel!!',color));
-    flg = 1;
-    while flg
-        [BW, xi, yi] = roipoly();
-        if isempty(BW)
-            title(sprintf('Try again (%s)',color));
-        else
-            flg = 0;
+    youthinkbad = 1;
+    while youthinkbad
+        fig = figure; imagesc(imRGB);
+        set(gca,'dataAspectRatio',[1 1 1]);
+        title(sprintf('Focus, pan, and locate the %s panel!!',color));
+        flg = 1;
+        while flg
+            [BW, xi, yi] = roipoly();
+            if isempty(BW)
+                title(sprintf('Try again (%s)',color));
+            else
+                flg = 0;
+            end
         end
+
+        close(fig);
+        fpath_im_color_mask = joinPath(pdir,sprintf('panel_%s_mask.bmp',color));
+        imwrite(BW,fpath_im_color_mask);
+
+        fig = figure; 
+        img_combine = sc(cat(3,imRGB.*BW,imRGB),'prob');
+        sc(img_combine);
+        axis on;
+        set(gca,'Position',[0.05 0.05 0.9 0.9]);
+        title(sprintf('Selected image mask (%s)',color));
+        fpath_im_color_comb = joinPath(pdir,sprintf('panel_%s_comb.bmp',color));
+        imwrite(img_combine,fpath_im_color_comb);
+        
+        answer = choosedialog;
+        switch answer
+            case 'Yes'
+                youthinkbad = 0;
+            case 'No'
+            youthinkbad = 1;
+        end
+        set(gca,'dataAspectRatio',[1 1 1]);
+        close(fig);
     end
-
-    clf(fig);
-    fpath_im_color_mask = joinPath(pdir,sprintf('panel_%s_mask.bmp',color));
-    imwrite(BW,fpath_im_color_mask);
-
-    fig = figure; 
-    img_combine = sc(cat(3,imRGB.*BW,imRGB),'prob');
-    title(sprintf('Selected image mask (%s)',color));
-    fpath_im_color_comb = joinPath(pdir,sprintf('panel_%s_comb.bmp',color));
-    imwrite(img_combine,fpath_im_color_comb);
-    title('Are you satisfied with this? (Press enter)');
-    set(gca,'dataAspectRatio',[1 1 1]);
-    pause;
-    clf(fig);
 
     save(fpathMaskdata,'BW','xi','yi');
 end
     
 end
+
+
+
