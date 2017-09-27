@@ -4,6 +4,8 @@ d = dir(pd);
 for i=1:length(d)
 dirNameList{i} = d(i).name;
 end
+dirNameList = dirNameList(3:end);
+
 for i=1:length(dirNameList)
 a = joinPath(pd,dirNameList{i},'raw');
 a = strrep(a,'\','/');
