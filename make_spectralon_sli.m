@@ -27,7 +27,7 @@ hdr.wavelength = white_rfl(:,1);
 
 spc_white = reshape(white_rfl(:,2),[hdr.lines,hdr.samples,hdr.bands]);
 spc_white = single(spc_white);
-basename_w = 'SPECTRALONW1201605';
+basename_w = 'SPW1RFL_201605';
 envihdrwritex(hdr,[basename_w '.hdr']);
 envidatawrite(spc_white,[basename_w '.sli'],hdr);
 
@@ -54,7 +54,7 @@ hdr.wavelength = gray_rfl(:,1);
 
 spc_gray = reshape(gray_rfl(:,2),[hdr.lines,hdr.samples,hdr.bands]);
 spc_gray = single(spc_gray);
-basename_g = 'SPECTRALONG1201607';
+basename_g = 'SPG1RFL_201607';
 envihdrwritex(hdr,[basename_g '.hdr']);
 envidatawrite(spc_gray,[basename_g '.sli'],hdr);
 
@@ -79,7 +79,7 @@ hdr.wavelength = black_rfl(:,1);
 
 spc_black = reshape(black_rfl(:,2),[hdr.lines,hdr.samples,hdr.bands]);
 spc_black = single(spc_black);
-basename_k = 'SPECTRALONK1201607';
+basename_k = 'SPK1RFL_201607';
 envihdrwritex(hdr,[basename_k '.hdr']);
 envidatawrite(spc_black,[basename_k '.sli'],hdr);
 
