@@ -39,7 +39,7 @@ if FileName
     
     btn = 'yes';
     if exist(pmMatpath,'file')
-        btn = questdlg(sprintf('%s exist. Do you want to continue?',pmMatpath));
+        btn = questdlg(sprintf('%s exist. Do you want to continue?',pmMatpath),'Warning','Yes','Load and update','no');
     end
 
     switch lower(btn)
@@ -74,6 +74,33 @@ if FileName
 
             envidatawrite(PM,envidatapath,hdr);
             envihdrwritex(hdr,infoPath);
+        case 'load and update'
+            % read image
+            imgRGB = imread(joinPath(pdir,[imgBase ext]));
+            load('pmMatpath','PM','xi','yi');
+            
+            imRGB = double(im);
+            pmc = sc(cat(3,imRGB.*PM,imRGB),'prob');
+            
+             hdr = envihdrnew(...
+                'description',description,...
+                'lines',size(imgRGB,1),...
+                'samples',size(imgRGB,2),...
+                'bands',1,...
+                'file_type','ENVI Standard',...
+                'RHO_ORIGINAL_IMAGE', imgBase,...
+                'RHO_OPERATOR', operator,...
+                'RHO_DATE_PROCESSED',datestr(now),...
+                'RHO_PANEL_EXTRACT_METHOD','M1:createROI_man')
+
+            save(pmMatpath,'PM','pmc','xi','yi');
+
+%             imwrite(PM,pmpath);
+%             imwrite(pmc,pcpath);
+
+            envidatawrite(PM,envidatapath,hdr);
+            envihdrwritex(hdr,infoPath);
+            
         otherwise
             msgbox('Processing is aborted');
     end
