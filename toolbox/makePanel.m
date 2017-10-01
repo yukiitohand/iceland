@@ -27,8 +27,9 @@ if FileName
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % value setup
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    PMbasename = [imgBase '_PM' panelID '_' methodID];
-    pmcbasename = [imgBase '_PC' panelID '_' methodID];
+    sceneID = imgBase(1:14); stripID = imgBase(20:22);
+    PMbasename = [sceneID '_' stripID '_PM' panelID '_' methodID];
+    pmcbasename = [sceneID '_' stripID '_PC' panelID '_' methodID];
 
     pmMatpath = joinPath(pdir,[PMbasename '.mat']);
     pmpath = joinPath(pdir,[PMbasename '.BMP']);
