@@ -1,11 +1,4 @@
-pdir = '/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/GU20160726_120703_0101/';
-
-PMbasename = 'GU2611L_120703_ST1_PMW1_M1';
-
-imgbasename = 'GU2611L_120703_RAD1ST1';
-
-operator = 'YI';
-
+function [] = computeSPC(pdir,imgbasename,PMbasename)
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

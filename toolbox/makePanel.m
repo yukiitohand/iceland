@@ -49,8 +49,8 @@ if FileName
             % processing
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % read image
-            im = imread(joinPath(pdir,[imgBase ext]));
-            [PM,xi,yi,pmc] = createROI_man(im);
+            imgRGB = imread(joinPath(pdir,[imgBase ext]));
+            [PM,xi,yi,pmc] = createROI_man(imgRGB);
 
             %%
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
