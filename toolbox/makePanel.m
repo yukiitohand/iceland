@@ -1,7 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % double check if the values are correct!
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-[FileName,PathName,FilterIndex] = uigetfile({'*.bmp;*.png'},'Select RGB image');
+default_folder = 'E:\data\headwall\MicroHyperspec\201607-08_iceland\iceland2016\SWIR data\captured';
+[FileName,PathName,FilterIndex] = uigetfile({'*.bmp;*.png'},'Select RGB image',default_folder);
 % pdir = 'E:\data\headwall\MicroHyperspec\201607-08_iceland\iceland2016\SWIR data\captured\GU20160726_120703_0101';
 % imgBase = 'GU2611L_120703_RAW1ST1_R73G31B15';
 
@@ -39,7 +40,7 @@ if FileName
     
     btn = 'yes';
     if exist(pmMatpath,'file')
-        btn = questdlg(sprintf('%s exist. Do you want to continue?',pmMatpath),'Warning','Yes','Load and update','no');
+        btn = questdlg(sprintf('%s exist. Do you want to continue?',pmMatpath),'Warning','Yes','No','No');
     end
 
     switch lower(btn)
@@ -49,31 +50,48 @@ if FileName
             % processing
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % read image
-            imgRGB = imread(joinPath(pdir,[imgBase ext]));
-            [PM,xi,yi,pmc] = createROI_man(imgRGB);
-
+            flg_sel = 1;
+            while flg_sel
+                try
+                    imgRGB = imread(joinPath(pdir,[imgBase ext]));
+                    [PM,xi,yi,pmc] = createROI_man(imgRGB);
+                    flg_sel = 0; flg_save = 1;
+                catch
+                     btn2 = questdlg('Cannot get ROI. Do you want to retry?','Retry','Yes','No','Yes');
+                     switch btn2
+                         case 'Yes'
+                             flg_sel=1;
+                         case 'No'
+                             flg_sel =0; flg_save = 0;
+                     end
+                end
+            end
             %%
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % saving
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            hdr = envihdrnew(...
-                'description',description,...
-                'lines',size(imgRGB,1),...
-                'samples',size(imgRGB,2),...
-                'bands',1,...
-                'file_type','ENVI Standard',...
-                'RHO_ORIGINAL_IMAGE', imgBase,...
-                'RHO_OPERATOR', operator,...
-                'RHO_DATE_PROCESSED',datestr(now),...
-                'RHO_PANEL_EXTRACT_METHOD','M1:createROI_man')
+            if flg_save
+                hdr = envihdrnew(...
+                    'description',description,...
+                    'lines',size(imgRGB,1),...
+                    'samples',size(imgRGB,2),...
+                    'bands',1,...
+                    'file_type','ENVI Standard',...
+                    'RHO_ORIGINAL_IMAGE', imgBase,...
+                    'RHO_OPERATOR', operator,...
+                    'RHO_DATE_PROCESSED',datestr(now),...
+                    'RHO_PANEL_EXTRACT_METHOD','M1:createROI_man')
 
-            save(pmMatpath,'PM','pmc','xi','yi');
+                save(pmMatpath,'PM','pmc','xi','yi');
 
-            imwrite(PM,pmpath);
-            imwrite(pmc,pcpath);
+                imwrite(PM,pmpath);
+                imwrite(pmc,pcpath);
 
-            envidatawrite(PM,envidatapath,hdr);
-            envihdrwritex(hdr,infoPath);
+                envidatawrite(PM,envidatapath,hdr);
+                envihdrwritex(hdr,infoPath);
+            else
+                msgbox('Processing is aborted');
+            end
         case 'load and update'
             % read image
             imgRGB = imread(joinPath(pdir,[imgBase ext]));

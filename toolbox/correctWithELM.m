@@ -1,4 +1,4 @@
-function [] = correctWithELM(pdir,rfldir,imgbasename,operator,spcWbasename,rflWbasename,spcGbasename,rflGbasename,spcKbasename,rflKbasename)
+function [] = correctWithELM(pdir,rfldir,imgbasename,operator,spcWbasename,rflWbasename,spcGbasename,rflGbasename,spcKbasename,rflKbasename,varargin)
 
 % pdir = '/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/GU20160726_120703_0101/';
 % rfldir = '';
@@ -16,6 +16,20 @@ function [] = correctWithELM(pdir,rfldir,imgbasename,operator,spcWbasename,rflWb
 
 % operator = 'YI';
 
+mode_process = 'BATCH';
+if (rem(length(varargin),2)==1)
+    error('Optional parameters should always go by pairs');
+else
+    for i=1:2:(length(varargin)-1)
+        switch upper(varargin{i})
+            case 'MODE'
+                mode_process = varargin{i+1};
+            otherwise
+                % Hmmm, something wrong with the parameter string
+                error(['Unrecognized option: ''' varargin{i} '''']);
+        end
+    end
+end
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -60,7 +74,7 @@ switch lower(btn)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % read image
         hdr = envihdrreadx(hdrPath);
-        img = envidataread_v2(imgPath,hdr);
+        
         
         % read spectrum
         spcWhdr = envihdrreadx(spcWhdrPath);
@@ -90,29 +104,15 @@ switch lower(btn)
         
         %%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % processing
+        % processing and saving
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         radMat = [spcW spcG spcK];
         refMat = [rflW rflG rflK];
 
         [c,refGen] = fnEmpiricalLineCalibration(radMat,refMat);
         
-        img2d = reshape(img,hdr.lines*hdr.samples,hdr.bands)';
-        
-        if verLessThan('matlab','9.1')
-            img2d_cor = bsxfun(@times,img2d,c(:,2)) + c(:,1);
-        else
-            img2d_cor = img2d.*c(:,2) + c(:,1);
-        end
-        
-        img_cor = reshape(img2d_cor',hdr.lines,hdr.samples,hdr.bands);
-        
-        %%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % saving
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         hdrcor = hdrupdate(hdr,...
-                    'RHO_ORIGINAL_IMAGE', imgbasename,...
+                    'RHO_ORIGINAL_IMAGE',imgbasename,...
                     'RHO_WHITE_SPC',spcWbasename,...
                     'RHO_WHITE_RFL',rflWbasename,...
                     'RHO_Gray_SPC',spcGbasename,...
@@ -122,13 +122,33 @@ switch lower(btn)
                     'RHO_OPERATOR', operator,...
                     'RHO_DATE_PROCESSED',datestr(now),...
                     'RHO_SPECTRUM_COMPUTING_METHOD','ELM with 3 panels_v1')
-                
+        
+        switch upper(mode_process)
+            case 'BATCH'
+                hdrcor = hdrupdate(hdrcor,'data_type',4);
+                img = envidataread_v2(imgPath,hdr);
+                [img_cor] = applyEML(img,hdr,c);
+%                 img2d = reshape(img,hdr.lines*hdr.samples,hdr.bands)';
+%                 if verLessThan('matlab','9.1')
+%                     img2d_cor = bsxfun(@times,img2d,c(:,2)) + c(:,1);
+%                 else
+%                     img2d_cor = img2d.*c(:,2) + c(:,1);
+%                 end
+%                 img_cor = reshape(img2d_cor',hdr.lines,hdr.samples,hdr.bands);
+                envidatawrite(img_cor,imgcorPath,hdrcor);
+            case 'LINEBYLINE'
+                [hdrcor] = applyEML_lineByline(imgPath,hdrcor,imgcorPath,c,{'data_type',4});
+            otherwise
+                error('Mode %s is not defined',mode_process);
+        end
+        
+        envihdrwritex(hdrcor,hdrcorPath);
+        
         ancillary_base = [imgcor_base '_ancillary'];
         ancillary_path = joinPath(pdir,[ancillary_base '.mat']);
         save(ancillary_path,'c');
+        
 
-        envidatawrite(img_cor,imgcorPath,hdrcor);
-        envihdrwritex(hdrcor,hdrcorPath);
     otherwise
         msgbox('Processing is aborted');
 end
