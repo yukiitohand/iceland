@@ -59,5 +59,6 @@ switch lower(btn)
         envihdrwritex(hdrspc,spchdrPath);
     otherwise
         msgbox('Processing is aborted');
+        spc = []; hdrspc = [];
 end
         
