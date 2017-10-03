@@ -1,7 +1,7 @@
 basenames = {'SPECTRALONW1201605','SPECTRALONG1201607','SPECTRALONK1201607'};
 
 hdrHWfile = 'E:\data\headwall\MicroHyperspec\201607-08_iceland\iceland2016\VNIR data\captured\2016_08_04_12_43_42\raw.hdr';
-hdrHWfile = 'E:\data\headwall\MicroHyperspec\201607-08_iceland\iceland2016\SWIR data\captured\2016_07_27_10_05_51\raw.hdr';
+hdrHWfile = 'E:\data\headwall\MicroHyperspec\201607-08_iceland\iceland2016\SWIR data\captured\GU20160726_120703_0101\raw.hdr';
 
 hdrHW = envihdrreadx(hdrHWfile); pixelfwhm = 5;
 for i=1:length(basenames)
