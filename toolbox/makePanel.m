@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % double check if the values are correct!
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-default_folder = 'E:\data\headwall\MicroHyperspec\201607-08_iceland\iceland2016\SWIR data\captured';
+default_folder = '/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured';
 [FileName,PathName,FilterIndex] = uigetfile({'*.bmp;*.png'},'Select RGB image',default_folder);
 % pdir = 'E:\data\headwall\MicroHyperspec\201607-08_iceland\iceland2016\SWIR data\captured\GU20160726_120703_0101';
 % imgBase = 'GU2611L_120703_RAW1ST1_R73G31B15';
@@ -40,7 +40,7 @@ if FileName
     
     btn = 'yes';
     if exist(pmMatpath,'file')
-        btn = questdlg(sprintf('%s exist. Do you want to continue?',pmMatpath),'Warning','Yes','No','No');
+        btn = questdlg(sprintf('%s exist. Do you want to continue?',pmMatpath),'Warning','Yes','no','no');
     end
 
     switch lower(btn)
@@ -94,16 +94,16 @@ if FileName
             end
         case 'load and update'
             % read image
-            imgRGB = imread(joinPath(pdir,[imgBase ext]));
-            load('pmMatpath','PM','xi','yi');
+            imRGB = imread(joinPath(pdir,[imgBase ext]));
+            load(pmMatpath,'PM','xi','yi');
             
-            imRGB = double(im);
+            imRGB = double(imRGB);
             pmc = sc(cat(3,imRGB.*PM,imRGB),'prob');
             
              hdr = envihdrnew(...
                 'description',description,...
-                'lines',size(imgRGB,1),...
-                'samples',size(imgRGB,2),...
+                'lines',size(imRGB,1),...
+                'samples',size(imRGB,2),...
                 'bands',1,...
                 'file_type','ENVI Standard',...
                 'RHO_ORIGINAL_IMAGE', imgBase,...

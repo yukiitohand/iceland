@@ -10,19 +10,25 @@ function [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,varargin)
 %   Optional parameters
 %      hdrcomponents: if any update of the hdr components is done, such as
 %      data_type change, cell array, {key, value, key, value}
+%      'f' : means force
 %   Output parameters
 %      hdrcor: updated header 
 %   Usage
 %     [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath)
 %     [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,hdrcomponents)
-
+%     [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,hdrcomponents,'f')
+%     [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,[],'f')
 
 hdrcomponents = {};
+force = '';
 if ~isempty(varargin)
     hdrcomponents = varargin{1};
-end
+    if length(varargin)==2
+        force = varargin{2};
+    end
+end 
 
-[hdrcor] = envi_linebyline(hdr,imgPath,imgcorPath,{@eml_lineByline,c},hdrcomponents);
+[hdrcor] = envi_lineByline(hdr,imgPath,imgcorPath,{@eml_lineByline,c},hdrcomponents,force);
 
 end
 

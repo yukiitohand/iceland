@@ -1,16 +1,10 @@
-function [] = flip_image(rootdir,d,imgbasename_original,sensorID,suffix,operator)
+function [] = flip_image(pdir,d,imgbasename_original,imgbasename_new,operator)
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % setup parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % d = 'GU20160726_140221_0201';
-pdir = joinPath(rootdir,d);
 
-
-dcell = strsplit(d,'_');
-baseID = [d(1:2) d(9:10) d(20) d(22)];
-    
-imgbasename_new = [baseID sensorID '_' dcell{2} '_' suffix];
 
 
 %%
@@ -42,7 +36,7 @@ hdr.lines = hdr_ori.samples;
 hdr.samples = hdr_ori.lines;
 hdr = hdrupdate(hdr,...
           'RHO_OPERATOR',operator,...
-          'RHO_ORIGINALIMAGE',original_image,...
+          'RHO_ORIGINAL_IMAGE',original_image,...
           'RHO_DATE_PROCESSED',datestr(now),...
           'RHO_COLLINEEXCHANGED',1,...
           'RHO_COL_FLIPPED',1);
