@@ -1,24 +1,8 @@
-function [] = simpleRatio(pdir,rfldir,imgbasename,imgbasename_new,operator,spcbasename,rflbasename,varargin)
+function [] = darkSubtract(pdir,imgbasename,imgbasename_new,operator,darkbasename,varargin)
 
-% pdir = '/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/GU20160726_120703_0101/';
-% rfldir = '';
-
-% imgbasename = 'GU2611L_120703_RAD1ST1';
-% 
-% spcWfilename = '';
-% rflWfilename = '';
-% 
-% spcGfilename = '';
-% rflGfilename = '';
-% 
-% spcKfilename = '';
-% rflKfilename = '';
-
-% operator = 'YI';
 
 mode_process = 'BATCH';
 force = 0;
-% imcode = 'RFL1W';
 if (rem(length(varargin),2)==1)
     error('Optional parameters should always go by pairs');
 else
@@ -42,16 +26,13 @@ end
 % value setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-imgPath = joinPath(pdir,[imgbasename '.IMG']);
+imgPath = joinPath(pdir,[imgbasename]);
 hdrPath = joinPath(pdir,[imgbasename '.HDR']);
 
-spcsliPath = joinPath(pdir, [spcbasename '.sli']);
-spchdrPath = joinPath(pdir, [spcbasename '.hdr']);
+darkPath = joinPath(pdir,[darkbasename]);
+darkhdrPath = joinPath(pdir,[darkbasename '.hdr']);
 
-rflsliPath = joinPath(rfldir, [rflbasename '.sli']);
-rflhdrPath = joinPath(rfldir, [rflbasename '.hdr']);
-
-% imgbasename_new = strrep(imgbasename,'RAD1',imcode);
+% imgcor_base = strrep(imgbasename,'RAD1','RFL3');
 imgcorPath = joinPath(pdir,[imgbasename_new '.IMG']);
 hdrcorPath = joinPath(pdir,[imgbasename_new '.HDR']);
 
@@ -70,54 +51,45 @@ switch lower(btn)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % read image
         hdr = envihdrreadx(hdrPath);
+        if isfield(hdr, 'RHO_COLLINEEXCHANGED') && isfield(hdr, 'RHO_COL_FLIPPED')
+            flg_flip_image = hdr.RHO_COLLINEEXCHANGED' * hdr.RHO_COL_FLIPPED;
+        else
+            flg_flip_image = 0;
+        end
+        darkhdr = envihdrreadx(darkhdrPath);
+        dark = envidataread_v2(darkPath,darkhdr);
         
-        
-        % read spectrum
-        spchdr = envihdrreadx(spchdrPath);
-        spc = envidataread_v2(spcsliPath,spchdr);
-        spc = squeeze(spc)';
-
-        % read reflectance
-        rflhdr = envihdrreadx(rflhdrPath);
-        rfl = envidataread_v2(rflsliPath,rflhdr);
-        rfl = squeeze(rfl)';
         
         %%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % processing and saving
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        cff = rfl./spc;
-        
-        ancillary_base = [imgbasename_new '_ancillary'];
-        ancillary_path = joinPath(pdir,[ancillary_base '.mat']);
-        
         hdrcor = hdrupdate(hdr,...
                     'RHO_ORIGINAL_IMAGE',imgbasename,...
-                    'RHO_RFLCOV_ANCILLARY',ancillary_base,...
-                    'RHO_RFLCOV_SPC',spcbasename,...
-                    'RHO_RFLCOV_RFL',rflbasename,...
+                    'RHO_DARK_SUBTRACTED',darkbasename,...
                     'RHO_OPERATOR', operator,...
                     'RHO_DATE_PROCESSED',datestr(now),...
-                    'RHO_RFLCOV_METHOD','simpleRatio')
+                    'RHO_RFLCOV_METHOD','dark_subtracted')
         
         switch upper(mode_process)
             case 'BATCH'
-                hdrcor = hdrupdate(hdrcor,'data_type',4);
+                hdrcor = hdrupdate(hdrcor,'data_type',12);
                 img = envidataread_v2(imgPath,hdr);
-                [img_cor] = simpleMultiply_batch(img,hdr,cff);
+                [img_cor] = darkSubtract_batch(img,dark);
                 envidatawrite(img_cor,imgcorPath,hdrcor);
             case 'LINEBYLINE'
-                [hdrcor] = simpleMultiply_lineByline(imgPath,hdrcor,imgcorPath,cff,{'data_type',4},'f');
+                [hdrcor] = darkSubtract_lineByline(imgPath,hdrcor,imgcorPath,...
+                                               dark,{'data_type',12},'f');
+%             case 'BANDBYBAND'
+%                 [hdrcor] = darkSubtract_bandByband(imgPath,hdrcor,imgcorPath,...
+%                                                dark,{'data_type',12},'f');
             otherwise
                 error('Mode %s is not defined',mode_process);
         end
         
         envihdrwritex(hdrcor,hdrcorPath);
-        save(ancillary_path,'cff');
         
 
     otherwise
         msgbox('Processing is aborted');
 end
-end
-        

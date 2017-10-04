@@ -17,19 +17,22 @@ for i=2:length(dnames)
         pdir = joinPath(rootdir,d);
         dcell = strsplit(d,'_');
         baseID = [d(1:2) d(9:10) d(20) d(22)];
-        imgbasename_new = [baseID sensorID '_' dcell{2} '_' 'RAW1ST1'];
-        flip_image(rootdir,d,'raw',imgbasename_new,operator);
+        imgbasename_new = [baseID sensorID '_' dcell{2} '_' 'RAD1ST1'];
+        flip_image(pdir,d,'raw_rd',imgbasename_new,operator);
     end
 end
 
-d = 'GU20160726_120703_0101';
-pdir = joinPath(rootdir,d);
 
+%% check signal
+d = 'GU20160727_84245_0101';
+pdir = joinPath(rootdir,d);
 dcell = strsplit(d,'_');
 baseID = [d(1:2) d(9:10) d(20) d(22)];
-imgbasename_new = [baseID sensorID '_' dcell{2} '_' 'DAT0ST1'];
-flip_image(pdir,d,'data',imgbasename_new,operator);
+basename = [baseID sensorID '_' dcell{2} '_RAW1ST1'];
+hdr = envihdrreadx(joinPath(pdir,[basename '.HDR']));
+img = envidataread_v2(joinPath(pdir,[basename '.IMG']),hdr);
 
-imgcor_base = strrep(imgbasename,'DAT0','RFL0');
-simpleMultiplyRFL(pdir,rfldir,imgbasename_new,imgcor_base,operator,rflGbasename,...
-                    'MODE','linebyline','Force',1,'IMCODE','RFL0');
+hsi = [];
+hsi.hdr = hdr;
+hsi.img = img;
+hsiview(hsi.img(:,:,[11,73,140]),{hsi},{'aa'});

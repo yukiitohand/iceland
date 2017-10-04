@@ -1,4 +1,4 @@
-function [] = ELM3panels(pdir,rfldir,imgbasename,operator,spcWbasename,rflWbasename,spcGbasename,rflGbasename,spcKbasename,rflKbasename,varargin)
+function [] = ELMwpanels(pdir,rfldir,imgbasename,imgbasename_new,operator,spcbasenames,rflbasenames,varargin)
 
 % pdir = '/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/GU20160726_120703_0101/';
 % rfldir = '';
@@ -27,11 +27,17 @@ else
                 mode_process = varargin{i+1};
             case 'FORCE'
                 force = varargin{i+1};
+%             case 'IMCODE'
+%                 imcode = varargin{i+1};
             otherwise
                 % Hmmm, something wrong with the parameter string
                 error(['Unrecognized option: ''' varargin{i} '''']);
         end
     end
+end
+
+if length(spcbasenames)<2
+    error('cannot perform ELM correction with 1 sample.');
 end
 
 %%
@@ -42,27 +48,26 @@ end
 imgPath = joinPath(pdir,[imgbasename '.IMG']);
 hdrPath = joinPath(pdir,[imgbasename '.HDR']);
 
-spcWsliPath = joinPath(pdir, [spcWbasename '.sli']);
-spcWhdrPath = joinPath(pdir, [spcWbasename '.hdr']);
+spcs = [];
+for i=1:length(spcbasenames)
+    spcsliPath = joinPath(pdir, [spcbasenames{i} '.sli']);
+    spchdrPath = joinPath(pdir, [spcbasenames{i} '.hdr']);
+    
+    spcs(i).sliPath = spcsliPath;
+    spcs(i).hdrPath = spchdrPath;
+end
 
-rflWsliPath = joinPath(rfldir, [rflWbasename '.sli']);
-rflWhdrPath = joinPath(rfldir, [rflWbasename '.hdr']);
+rfls = [];
+for i=1:length(rflbasenames)
+    rflsliPath = joinPath(rfldir, [rflbasenames{i} '.sli']);
+    rflhdrPath = joinPath(rfldir, [rflbasenames{i} '.hdr']);
+    rfls(i).sliPath = rflsliPath;
+    rfls(i).hdrPath = rflhdrPath;
+end
 
-spcGsliPath = joinPath(pdir, [spcGbasename '.sli']);
-spcGhdrPath = joinPath(pdir, [spcGbasename '.hdr']);
-
-rflGsliPath = joinPath(rfldir, [rflGbasename '.sli']);
-rflGhdrPath = joinPath(rfldir, [rflGbasename '.hdr']);
-
-spcKsliPath = joinPath(pdir, [spcKbasename '.sli']);
-spcKhdrPath = joinPath(pdir, [spcKbasename '.hdr']);
-
-rflKsliPath = joinPath(rfldir, [rflKbasename '.sli']);
-rflKhdrPath = joinPath(rfldir, [rflKbasename '.hdr']);
-
-imgcor_base = strrep(imgbasename,'RAD1','RFL2');
-imgcorPath = joinPath(pdir,[imgcor_base '.IMG']);
-hdrcorPath = joinPath(pdir,[imgcor_base '.HDR']);
+% imgcor_base = strrep(imgbasename,'RAD1','RFL3');
+imgcorPath = joinPath(pdir,[imgbasename_new '.IMG']);
+hdrcorPath = joinPath(pdir,[imgbasename_new '.HDR']);
 
 btn = 'yes';
 if ~force
@@ -82,55 +87,46 @@ switch lower(btn)
         
         
         % read spectrum
-        spcWhdr = envihdrreadx(spcWhdrPath);
-        spcW = envidataread_v2(spcWsliPath,spcWhdr);
-        spcW = squeeze(spcW)';
+        for i=1:length(spcs)
+            spchdr = envihdrreadx(spcs(i).hdrPath);
+            spc = envidataread_v2(spcs(i).sliPath,spchdr);
+            spc = squeeze(spc)';
+            
+            spcs(i).hdr = spchdr;
+            spcs(i).spc = spc;
+        end
         
-        spcGhdr = envihdrreadx(spcGhdrPath);
-        spcG = envidataread_v2(spcGsliPath,spcGhdr);
-        spcG = squeeze(spcG)';
-        
-        spcKhdr = envihdrreadx(spcKhdrPath);
-        spcK = envidataread_v2(spcKsliPath,spcKhdr);
-        spcK = squeeze(spcK)';
         
         % read reflectance
-        rflWhdr = envihdrreadx(rflWhdrPath);
-        rflW = envidataread_v2(rflWsliPath,rflWhdr);
-        rflW = squeeze(rflW)';
-        
-        rflGhdr = envihdrreadx(rflGhdrPath);
-        rflG = envidataread_v2(rflGsliPath,rflGhdr);
-        rflG = squeeze(rflG)';
-        
-        rflKhdr = envihdrreadx(rflKhdrPath);
-        rflK = envidataread_v2(rflKsliPath,rflKhdr);
-        rflK = squeeze(rflK)';
+        for i=1:length(rfls)
+            rflhdr = envihdrreadx(rfls(i).hdrPath);
+            rfl = envidataread_v2(rfls(i).sliPath,rflhdr);
+            rfl = squeeze(rfl)';
+            
+            rfls(i).hdr = rflhdr;
+            rfls(i).rfl = rfl;
+        end
         
         %%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % processing and saving
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        radMat = [spcW spcG spcK];
-        refMat = [rflW rflG rflK];
+        radMat = cat(2,spcs.spc);
+        refMat = cat(2,rfls.rfl);
 
         [c,refGen] = fnEmpiricalLineCalibration(radMat,refMat);
         
-        ancillary_base = [imgcor_base '_ancillary'];
+        ancillary_base = [imgbasename_new '_ancillary'];
         ancillary_path = joinPath(pdir,[ancillary_base '.mat']);
         
         hdrcor = hdrupdate(hdr,...
                     'RHO_ORIGINAL_IMAGE',imgbasename,...
                     'RHO_RFLCOV_ANCILLARY',ancillary_base,...
-                    'RHO_RFLCOV_WHITE_SPC',spcWbasename,...
-                    'RHO_RFLCOV_WHITE_RFL',rflWbasename,...
-                    'RHO_RFLCOV_Gray_SPC',spcGbasename,...
-                    'RHO_RFLCOV_Gray_RFL',rflGbasename,...
-                    'RHO_RFLCOV_Black_SPC',spcKbasename,...
-                    'RHO_RFLCOV_Black_RFL',rflKbasename,...
+                    'RHO_RFLCOV_SPCs',cell1dstrprintf(spcbasenames,',','{}'),...
+                    'RHO_RFLCOV_RFLs',cell1dstrprintf(rflbasenames,',','{}'),...
                     'RHO_OPERATOR', operator,...
                     'RHO_DATE_PROCESSED',datestr(now),...
-                    'RHO_RFLCOV_METHOD','ELM with 3 panels_v1')
+                    'RHO_RFLCOV_METHOD','ELMwpanels')
         
         switch upper(mode_process)
             case 'BATCH'
@@ -151,3 +147,6 @@ switch lower(btn)
     otherwise
         msgbox('Processing is aborted');
 end
+
+
+

@@ -1,12 +1,11 @@
-function [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,varargin)
-% perform empirical line correction line by line and dump the image
+function [hdrcor] = simpleMultiply_lineByline(imgPath,hdr,imgcorPath,cff,varargin)
+% perform simple spectrum times by line and dump the image
 % directly to the disk.
 %   Input Parameters
 %      imgPath: path to the original image
 %      hdr: header information for original file
 %      imgcorPath: path to the new corrected image
-%      c: coefficient for correction [L x 2], first column is the bias and
-%         the second column is the multiplier
+%      c: coefficient vector for multiplication [L x 1], 
 %   Optional parameters
 %      hdrcomponents: if any update of the hdr components is done, such as
 %      data_type change, cell array, {key, value, key, value}
@@ -14,9 +13,9 @@ function [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,varargin)
 %   Output parameters
 %      hdrcor: updated header 
 %   Usage
-%     [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,hdrcomponents)
-%     [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,hdrcomponents,'f')
-%     [hdrcor] = applyEML_lineByline(imgPath,hdr,imgcorPath,c,[],'f')
+%     [hdrcor] = simpleMultiply_lineByline(imgPath,hdr,imgcorPath,cff,hdrcomponents)
+%     [hdrcor] = simpleMultiply_lineByline(imgPath,hdr,imgcorPath,cff,hdrcomponents,'f')
+%     [hdrcor] = simpleMultiply_lineByline(imgPath,hdr,imgcorPath,cff,[],'f')
 
 hdrcomponents = {};
 force = '';
@@ -27,12 +26,12 @@ if ~isempty(varargin)
     end
 end 
 
-[hdrcor] = envi_lineByline(hdr,imgPath,imgcorPath,{@eml_lineByline,c},hdrcomponents,force);
+[hdrcor] = envi_lineByline(hdr,imgPath,imgcorPath,{@sm_lineByline,cff},hdrcomponents,force);
 
 end
 
-function [iml_cor] = eml_lineByline(iml,l,c)
-% apply EML correction for one line
+function [iml_cor] = sm_lineByline(iml,l,cff)
+% apply simple multiplication for one line
 %   iml: image [bands x sample]
 %   l; line
 %   c: coefficient for correction [L x 2], first column is the bias and
@@ -40,8 +39,8 @@ function [iml_cor] = eml_lineByline(iml,l,c)
 %   iml_cor: corrected image
 
     if verLessThan('matlab','9.1')
-        iml_cor = bsxfun(@plus,bsxfun(@times,iml,c(:,2)), c(:,1));
+        iml_cor = bsxfun(@times,iml,cff);
     else
-        iml_cor = iml.*c(:,2) + c(:,1);
+        iml_cor = iml.*cff;
     end
 end
