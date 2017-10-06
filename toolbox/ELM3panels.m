@@ -1,4 +1,4 @@
-function [] = correctWithELM(pdir,rfldir,imgbasename,operator,spcWbasename,rflWbasename,spcGbasename,rflGbasename,spcKbasename,rflKbasename,varargin)
+function [] = ELM3panels(pdir,rfldir,imgbasename,operator,spcWbasename,rflWbasename,spcGbasename,rflGbasename,spcKbasename,rflKbasename,varargin)
 
 % pdir = '/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/GU20160726_120703_0101/';
 % rfldir = '';
@@ -17,6 +17,7 @@ function [] = correctWithELM(pdir,rfldir,imgbasename,operator,spcWbasename,rflWb
 % operator = 'YI';
 
 mode_process = 'BATCH';
+force = 0;
 if (rem(length(varargin),2)==1)
     error('Optional parameters should always go by pairs');
 else
@@ -24,6 +25,8 @@ else
         switch upper(varargin{i})
             case 'MODE'
                 mode_process = varargin{i+1};
+            case 'FORCE'
+                force = varargin{i+1};
             otherwise
                 % Hmmm, something wrong with the parameter string
                 error(['Unrecognized option: ''' varargin{i} '''']);
@@ -62,8 +65,10 @@ imgcorPath = joinPath(pdir,[imgcor_base '.IMG']);
 hdrcorPath = joinPath(pdir,[imgcor_base '.HDR']);
 
 btn = 'yes';
-if exist(imgcorPath,'file')
-    btn = questdlg(sprintf('%s exist. Do you want to continue?',imgcorPath));
+if ~force
+    if exist(imgcorPath,'file')
+        btn = questdlg(sprintf('%s exist. Do you want to continue?',imgcorPath));
+    end
 end
 
 switch lower(btn)
@@ -111,41 +116,35 @@ switch lower(btn)
 
         [c,refGen] = fnEmpiricalLineCalibration(radMat,refMat);
         
+        ancillary_base = [imgcor_base '_ancillary'];
+        ancillary_path = joinPath(pdir,[ancillary_base '.mat']);
+        
         hdrcor = hdrupdate(hdr,...
                     'RHO_ORIGINAL_IMAGE',imgbasename,...
-                    'RHO_WHITE_SPC',spcWbasename,...
-                    'RHO_WHITE_RFL',rflWbasename,...
-                    'RHO_Gray_SPC',spcGbasename,...
-                    'RHO_Gray_RFL',rflGbasename,...
-                    'RHO_Black_SPC',spcKbasename,...
-                    'RHO_Black_RFL',rflKbasename,...
+                    'RHO_RFLCOV_ANCILLARY',ancillary_base,...
+                    'RHO_RFLCOV_WHITE_SPC',spcWbasename,...
+                    'RHO_RFLCOV_WHITE_RFL',rflWbasename,...
+                    'RHO_RFLCOV_Gray_SPC',spcGbasename,...
+                    'RHO_RFLCOV_Gray_RFL',rflGbasename,...
+                    'RHO_RFLCOV_Black_SPC',spcKbasename,...
+                    'RHO_RFLCOV_Black_RFL',rflKbasename,...
                     'RHO_OPERATOR', operator,...
                     'RHO_DATE_PROCESSED',datestr(now),...
-                    'RHO_SPECTRUM_COMPUTING_METHOD','ELM with 3 panels_v1')
+                    'RHO_RFLCOV_METHOD','ELM with 3 panels_v1')
         
         switch upper(mode_process)
             case 'BATCH'
                 hdrcor = hdrupdate(hdrcor,'data_type',4);
                 img = envidataread_v2(imgPath,hdr);
-                [img_cor] = applyEML(img,hdr,c);
-%                 img2d = reshape(img,hdr.lines*hdr.samples,hdr.bands)';
-%                 if verLessThan('matlab','9.1')
-%                     img2d_cor = bsxfun(@times,img2d,c(:,2)) + c(:,1);
-%                 else
-%                     img2d_cor = img2d.*c(:,2) + c(:,1);
-%                 end
-%                 img_cor = reshape(img2d_cor',hdr.lines,hdr.samples,hdr.bands);
+                [img_cor] = applyEML_batch(img,hdr,c);
                 envidatawrite(img_cor,imgcorPath,hdrcor);
             case 'LINEBYLINE'
-                [hdrcor] = applyEML_lineByline(imgPath,hdrcor,imgcorPath,c,{'data_type',4});
+                [hdrcor] = applyEML_lineByline(imgPath,hdrcor,imgcorPath,c,{'data_type',4},'f');
             otherwise
                 error('Mode %s is not defined',mode_process);
         end
         
         envihdrwritex(hdrcor,hdrcorPath);
-        
-        ancillary_base = [imgcor_base '_ancillary'];
-        ancillary_path = joinPath(pdir,[ancillary_base '.mat']);
         save(ancillary_path,'c');
         
 

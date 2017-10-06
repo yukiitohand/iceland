@@ -1,28 +1,37 @@
-function [] = flip_image(rootdir,d,imgbasename_original,sensorID,suffix,operator)
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% setup parameters
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% d = 'GU20160726_140221_0201';
-pdir = joinPath(rootdir,d);
+function [] = flip_image(pdir,d,imgbasename,imgbasename_new,operator,varargin)
+% flip line and sample axis. After that, the first axis is flipped.
 
-
-dcell = strsplit(d,'_');
-baseID = [d(1:2) d(9:10) d(20) d(22)];
-    
-imgbasename_new = [baseID sensorID '_' dcell{2} '_' suffix];
-
+mode_process = 'BATCH';
+force = 0;
+imgext = '';
+if (rem(length(varargin),2)==1)
+    error('Optional parameters should always go by pairs');
+else
+    for i=1:2:(length(varargin)-1)
+        switch upper(varargin{i})
+            case 'MODE'
+                mode_process = varargin{i+1};
+            case 'FORCE'
+                force = varargin{i+1};
+            case 'IMGEXT'
+                imgext = varargin{i+1};
+            otherwise
+                % Hmmm, something wrong with the parameter string
+                error(['Unrecognized option: ''' varargin{i} '''']);
+        end
+    end
+end
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % setup file path
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-imgPath_ori = joinPath(pdir,[imgbasename_original]);
-hdrPath_ori = joinPath(pdir,[imgbasename_original '.hdr']);
-imgPath = joinPath(pdir,[imgbasename_new '.IMG']);
-hdrPath = joinPath(pdir,[imgbasename_new '.HDR']);
+imgPath = joinPath(pdir,[imgbasename '.' imgext]);
+hdrPath = joinPath(pdir,[imgbasename '.hdr']);
+imgNewPath = joinPath(pdir,[imgbasename_new '.IMG']);
+hdrNewPath = joinPath(pdir,[imgbasename_new '.HDR']);
 
-original_image = joinPath(d,imgbasename_original);
+original_image = joinPath(d,imgbasename);
 % tmp paths
 % tmpimgPath = joinPath(pdir,[imgbasename_new '_tmp.IMG']);
 % tmphdrPath = joinPath(pdir,[imgbasename_new '_tmp.HDR']);
@@ -31,37 +40,50 @@ original_image = joinPath(d,imgbasename_original);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % read and process the image
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-hdr_ori = envihdrreadx(hdrPath_ori);
-img_ori = envidataread_v2(imgPath_ori,hdr_ori);
+btn = 'yes';
+if ~force
+    if exist(imgNewPath,'file')
+        btn = questdlg(sprintf('%s exist. Do you want to continue?',imgNewPath));
+    end
+end
 
-img = permute(img_ori,[2 1 3]);
-img = flip(img,1);
+switch lower(btn)
+    case 'yes'
+        hdr = envihdrreadx(hdrPath);
 
-hdr = hdr_ori;
-hdr.lines = hdr_ori.samples;
-hdr.samples = hdr_ori.lines;
-hdr = hdrupdate(hdr,...
-          'RHO_OPERATOR',operator,...
-          'RHO_ORIGINALIMAGE',original_image,...
-          'RHO_DATE_PROCESSED',datestr(now),...
-          'RHO_COLLINEEXCHANGED',1,...
-          'RHO_COL_FLIPPED',1);
+        hdrcor = hdrupdate(hdr,...
+                  'RHO_OPERATOR',operator,...
+                  'RHO_ORIGINAL_IMAGE',original_image,...
+                  'RHO_DATE_PROCESSED',datestr(now),...
+                  'RHO_COLLINEEXCHANGED',1,...
+                  'RHO_COL_FLIPPED',1);
 %
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% save image
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-envihdrwritex(hdr,hdrPath);
-envidatawrite(img,imgPath,hdr);
+        %%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % save image
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        switch upper(mode_process)
+            case 'BATCH'
+                hdrcor.lines = hdr.samples;
+                hdrcor.samples = hdr.lines;
+                img = envidataread_v2(imgPath,hdr);
+                imgcor = permute(img,[2 1 3]);
+                imgcor = flip(imgcor,1);
+                
+                envidatawrite(imgcor,imgNewPath,hdrcor);
+            case 'BANDBYBAND'
+                [hdrcor] = flipimage_bandByband(imgPath,hdrcor,imgNewPath,...
+                           {'lines',hdr.samples,'samples',hdr.lines,},'f');
+                
+            otherwise
+                error('Mode %s is not defined',mode_process);
+        end
+        envihdrwritex(hdrcor,hdrNewPath);
+        
+    otherwise
+        msgbox('Processing is aborted');
+end
 
-% %%
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % replace original image and delete the temporary image
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% copyfile(tmphdrPath,hdrPath,'f');
-% copyfile(tmpimgPath,imgPath,'f');
-% 
-% delete(tmphdrPath);
-% delete(tmpimgPath);
+
 
 
