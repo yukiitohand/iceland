@@ -24,7 +24,7 @@ for i=1:length(varargin)
     imgPath = joinPath(pdir, basename);
     
     for l=1:hdr.lines
-        iml = lazyEnviReadl(imgPath,hdr,hdrNew.lines-hdr.lines+l);
+        iml = lazyEnviReadl(imgPath,hdr,l);
         a = lazyEnviWritel(imgNewPath,iml,hdrNew,l,'a');
     end
 end
