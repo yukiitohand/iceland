@@ -1,4 +1,23 @@
 function [] = ELMwpanels(pdir,rfldir,imgbasename,imgbasename_new,operator,spcbasenames,rflbasenames,varargin)
+% [] = ELMwpanels(pdir,rfldir,imgbasename,imgbasename_new,operator,spcbasenames,rflbasenames,varargin)
+%   Perform empirical line correction and save images in the same folder.
+%   Input Parameters
+%      pdir: directory of the images
+%      rfldir: directory of the reflectance files
+%      imgbasename: basename of the image to be processed
+%      imgbasename_new: basename of the processed image
+%      operator: Intitial of the operator
+%      spcbasenames: cell array, each element is the basename of the
+%                    reference spectrum file.
+%      rflbasenames: cell array, each element is the basename of the
+%                    reflectance file.
+%   Optional Parameters
+%      'MODE': {'BATCH','LINEBYLINE'} how to perform processing. If 'BATCH' is
+%              specified, the whole image is loaded onto memory, If 'LINEBYLINE' is
+%              specified, correction is performed line by line
+%              (default) 'BATCH'
+%      'FORCE': boolean, if true, the file is overwritten without warning.
+%               (default) false
 
 % pdir = '/Volumes/SED/data/headwall/MicroHyperspec/201607-08_iceland/iceland2016/SWIR data/captured/GU20160726_120703_0101/';
 % rfldir = '';

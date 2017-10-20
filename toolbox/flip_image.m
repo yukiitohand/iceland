@@ -1,5 +1,22 @@
 function [] = flip_image(pdir,d,imgbasename,imgbasename_new,operator,varargin)
-% flip line and sample axis. After that, the first axis is flipped.
+% [] = flip_image(pdir,d,imgbasename,imgbasename_new,operator,varargin)
+%   flip line and sample axis. After that, the first axis is flipped.
+%   Input Parameters
+%      pdir: directory of the images
+%      d:
+%      imgbasename: basename of the image to be processed
+%      imgbasename_new: basename of the processed image
+%      operator: Intitial of the operator
+%   Optional Parameters
+%      'MODE': {'BATCH','BANDBYBAND'} how to perform processing. If 'BATCH' is
+%              specified, the whole image is loaded onto memory, If 'BANDBYBAND' is
+%              specified, correction is performed band by band
+%              (default) 'BATCH'
+%      'FORCE': boolean, if true, the file is overwritten without warning.
+%               (default) false
+%      'IMGEXT': extention of the original image file, such as ".IMG"
+%                (default) ''
+
 
 mode_process = 'BATCH';
 force = 0;
@@ -26,7 +43,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % setup file path
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-imgPath = joinPath(pdir,[imgbasename '.' imgext]);
+imgPath = joinPath(pdir,[imgbasename imgext]);
 hdrPath = joinPath(pdir,[imgbasename '.hdr']);
 imgNewPath = joinPath(pdir,[imgbasename_new '.IMG']);
 hdrNewPath = joinPath(pdir,[imgbasename_new '.HDR']);

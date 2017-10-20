@@ -1,4 +1,17 @@
-function [spc,hdrspc] = computeSPC(pdir,imgbasename,PMbasename,operator,description)
+function [spc,hdrspc] = computeSPCroimean(pdir,imgbasename,PMbasename,operator,description)
+% [spc,hdrspc] = computeSPCroimean(pdir,imgbasename,PMbasename,operator,description)
+%   Take the spectra in the region of interest and peform simple average
+%   and output to file.
+%   Input Parameters
+%      pdir: directory of the images
+%      imgbasename: basename of the image to be processed
+%      PMbasename: basename of the region of interest file
+%      operator: Intitial of the operator
+%      description: description to be saved in the header.
+%   Output Parameters
+%      spc: 1d-array of the spectrum
+%      hdrspc: struct, containing header information
+
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % value setup
